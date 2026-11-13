@@ -4,6 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#14213d">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Elim">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Elim International Ministries</title>
 <style>
 :root{--navy:#14213d;--navy2:#1d2f55;--gold:#c9973a;--cream:#faf6ee;--ink:#1c2233;--mut:#6b7385;--line:#e6dfd0;--ok:#2f7d5b;--warn:#b7791f;--bad:#b3423a}
@@ -177,6 +183,7 @@ function refresh(force){
   if(!force){var a=document.activeElement;if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))return}
   render();
 }
+if('serviceWorker' in navigator)window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})});
 window.boot=function(){
   if(!window.CONFIGURED||!window.FB){renderSetup();return}
   FB.onAuthStateChanged(FB.auth,function(user){stopSession();if(user)startSession(user);else render()});
