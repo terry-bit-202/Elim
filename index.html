@@ -217,7 +217,7 @@ function render(){
   var u=S.me?me():null;if(!u){renderLogin();return}
   var nav=navFor(u.role);
   if(!nav.some(function(n){return n[0]===S.view}))S.view='home';
-  $('#app').innerHTML='<header><img src="'+ICON+'" alt="" style="width:40px;height:42px;border-radius:8px;object-fit:cover"><div><h1>Elim International Ministries</h1><small>'+esc(u.name)+' · '+ROLES[u.role]+(u.dept?' · '+esc(u.dept):'')+'</small></div><div class="sp"></div><button onclick="logout()">Sign out</button></header>'+
+  $('#app').innerHTML='<header><img src="'+ICON+'" alt="" style="width:40px;height:42px;border-radius:8px;object-fit:cover"><div><h1>Elim International Ministries</h1><small>'+esc(u.name)+' · '+ROLES[u.role]+(u.dept?' · '+esc(u.dept):'')+' · v3</small></div><div class="sp"></div><button onclick="logout()">Sign out</button></header>'+
   '<main id="main"></main><nav>'+nav.map(function(n){return '<button class="'+(S.view===n[0]?'on':'')+'" onclick="go(\''+n[0]+'\')"><span class="i">'+n[1]+'</span>'+n[2]+(n[3]?'<span class="badge">'+n[3]+'</span>':'')+'</button>'}).join('')+'</nav>';
   var v=VIEWS[S.view];$('#main').innerHTML=v?v(u):'';
 }
@@ -431,7 +431,14 @@ VIEWS.prayer=function(u){
 // ---------- shared form helpers ----------
 var DEFAULT_ROLES=['Usher','Greeter','Protocol','Security','Sound technician','Camera / Media','Worship leader','Choir member','Instrumentalist','Children teacher','Prayer team','Offering team','Interpreter','Cleaner'];
 function allRoles(){var out=DEFAULT_ROLES.slice();(S.roles||[]).forEach(function(r){if(out.indexOf(r)<0)out.push(r)});return out}
-function deptSelect(id,val){return '<select id="'+id+'"><option value="">Choose department...</option>'+DEPTS.map(function(d){return '<option'+(d===val?' selected':'')+'>'+esc(d)+'</option>'}).join('')+'</select>'}
+function eur(n){var x=parseFloat(n);if(isNaN(x))return n===undefined||n===null?'':n;return '€'+x.toLocaleString('en-GB',{minimumFractionDigits:x%1?2:0,maximumFractionDigits:2})}
+function deptSelect(id,val){
+  var u=me();
+  if(u&&u.role==='leader'){
+    if(u.dept)return '<select id="'+id+'" disabled style="opacity:1;font-weight:600"><option>'+esc(u.dept)+'</option></select>';
+    return '<select id="'+id+'" disabled><option value="">Not set yet</option></select><p class="meta" style="color:var(--bad)">Ask the Bishop to set your department in People.</p>';
+  }
+  return '<select id="'+id+'"><option value="">Choose department...</option>'+DEPTS.map(function(d){return '<option'+(d===val?' selected':'')+'>'+esc(d)+'</option>'}).join('')+'</select>'}
 function formHead(title,sub){return '<div class="fhead"><img src="'+ICON+'" alt="Elim logo"><div><div class="fch">Elim International Ministries</div><h2>'+title+'</h2><div class="fsub">'+sub+'</div></div></div>'}
 function sec(t){return '<div class="fsec">'+t+'</div>'}
 function ok2(t){var e=document.createElement('div');e.className='note';e.textContent=t;e.style.color='var(--ok)';e.style.background='#e9f7ef';e.style.borderColor='#bfe3cf';var m=$('#main');if(m)m.prepend(e);setTimeout(function(){e.remove()},3500)}
@@ -461,7 +468,7 @@ VIEWS.plan=function(u){
   sec('3. Planned activities')+'<p class="meta" style="margin:6px 0 0">Every activity needs a date. A date can be used by one department only, and each month allows '+MAXACT+' activities in total.</p>'+
   '<div id="pl_rows">'+rowsHtml('pl')+'</div><button class="btn sm ghost" onclick="addRow(\'pl\')">+ Add activity</button>'+
   sec('4. Resources')+
-  '<div class="row"><div><label>Budget needed</label><input id="pl_b" inputmode="decimal" placeholder="0"></div><div><label>Expected attendance</label><input id="pl_e" inputmode="numeric" placeholder="0"></div></div>'+
+  '<div class="row"><div><label>Budget needed (€)</label><input id="pl_b" inputmode="decimal" placeholder="0"></div><div><label>Expected attendance</label><input id="pl_e" inputmode="numeric" placeholder="0"></div></div>'+
   '<label>Support needed from leadership</label><textarea id="pl_s" placeholder="Anything you need from the pastors or bishop"></textarea>'+
   '<button class="btn gold" style="width:100%;margin-top:18px" onclick="addPlan()">Submit action plan</button></div></div>'+
   '<h3>My submitted plans</h3>';
@@ -470,7 +477,7 @@ VIEWS.plan=function(u){
   return h;
 };
 // ---------- MONTHLY REPORT ----------
-function calcBal(){var i=parseFloat($('#rp_in').value)||0,e=parseFloat($('#rp_ex').value)||0;$('#rp_bal').textContent=(i-e).toLocaleString()}
+function calcBal(){var i=parseFloat($('#rp_in').value)||0,e=parseFloat($('#rp_ex').value)||0;$('#rp_bal').textContent=eur(i-e)}
 VIEWS.report=function(u){
   var mine=S.reports.filter(function(p){return p.by===u.id}).reverse();
   var m=new Date().toISOString().slice(0,7);
@@ -484,8 +491,8 @@ VIEWS.report=function(u){
   '<label>What was accomplished</label><textarea id="rp_a" placeholder="Meetings, outreach, services, trainings..."></textarea>'+
   '<label>Challenges faced</label><textarea id="rp_c"></textarea>'+
   sec('4. Finances')+
-  '<div class="row"><div><label>Income / offerings</label><input id="rp_in" inputmode="decimal" placeholder="0" oninput="calcBal()"></div><div><label>Expenses</label><input id="rp_ex" inputmode="decimal" placeholder="0" oninput="calcBal()"></div></div>'+
-  '<div class="bal">Balance: <b id="rp_bal">0</b></div>'+
+  '<div class="row"><div><label>Income / offerings (€)</label><input id="rp_in" inputmode="decimal" placeholder="0" oninput="calcBal()"></div><div><label>Expenses (€)</label><input id="rp_ex" inputmode="decimal" placeholder="0" oninput="calcBal()"></div></div>'+
+  '<div class="bal">Balance: <b id="rp_bal">€0</b></div>'+
   sec('5. Next month')+
   '<label>Plans for next month</label><textarea id="rp_n"></textarea>'+
   '<button class="btn gold" style="width:100%;margin-top:18px" onclick="addReport()">Submit report</button></div></div>'+
@@ -524,8 +531,8 @@ function rosterCard(p,review){
 }
 function line(l,v){return v?'<p style="margin:6px 0;white-space:pre-line"><b>'+l+':</b> '+esc(v)+'</p>':''}
 function itemCard(p,kind,review){
-  var body=kind==='plan'?line('Goals',p.goals)+line('Activities',p.acts)+line('Budget',p.budget)+line('Expected attendance',p.exp)+line('Support needed',p.support):
-    line('Accomplished',p.done)+line('Attendance',p.att)+line('New people',p.nw)+line('Challenges',p.chal)+line('Income',p.inc)+line('Expenses',p.exp)+line('Next month',p.next);
+  var body=kind==='plan'?line('Goals',p.goals)+line('Activities',p.acts)+line('Budget',eur(p.budget))+line('Expected attendance',p.exp)+line('Support needed',p.support):
+    line('Accomplished',p.done)+line('Attendance',p.att)+line('New people',p.nw)+line('Challenges',p.chal)+line('Income',eur(p.inc))+line('Expenses',eur(p.exp))+line('Next month',p.next);
   var h='<div class="card"><span class="tag '+p.status+'">'+p.status+'</span> <b>'+esc(p.dept||'Department')+'</b> · '+monthLabel(p.month)+'<div class="meta">By '+esc(nameOf(p.by))+'</div>'+body;
   h+=commentsHtml(p);
   if(review)h+=reviewControls(p,kind);
@@ -643,10 +650,10 @@ function compiledCard(c,u){
   var it=c.items||[],inc=sumF(it,'inc'),ex=sumF(it,'exp');
   var h='<div class="card" id="cmp_'+c.id+'"><div class="dh"><img src="'+ICON+'" alt=""><div><b>Elim International Ministries</b><br><span class="meta">Consolidated monthly report · '+monthLabel(c.month)+'</span></div></div>';
   h+='<span class="tag '+(c.status==='sent'?'submitted':c.status)+'">'+(c.status==='sent'?'waiting for Bishop':c.status==='approved'?'final approval':'returned')+'</span> <span class="meta">Prepared by '+esc(c.byName||nameOf(c.by))+' · '+new Date(c.createdAt||0).toISOString().slice(0,10)+'</span>';
-  h+='<div class="tot"><div><b>'+it.length+'</b>Reports</div><div><b>'+sumF(it,'att')+'</b>Total attendance</div><div><b>'+sumF(it,'nw')+'</b>New people</div><div><b>'+(inc-ex).toLocaleString()+'</b>Balance ('+inc.toLocaleString()+' in, '+ex.toLocaleString()+' out)</div></div>';
+  h+='<div class="tot"><div><b>'+it.length+'</b>Reports</div><div><b>'+sumF(it,'att')+'</b>Total attendance</div><div><b>'+sumF(it,'nw')+'</b>New people</div><div><b>'+eur(inc-ex)+'</b>Balance ('+eur(inc)+' in, '+eur(ex)+' out)</div></div>';
   it.forEach(function(x){
     h+='<div class="dsec"><b>'+esc(x.dept)+'</b> <span class="meta">· '+esc(x.leader)+(x.approvedBy?' · approved by '+esc(x.approvedBy):'')+'</span>'+
-    line('Accomplished',x.done)+line('Attendance',x.att)+line('New people',x.nw)+line('Challenges',x.chal)+line('Income',x.inc)+line('Expenses',x.exp)+line('Next month',x.next)+
+    line('Accomplished',x.done)+line('Attendance',x.att)+line('New people',x.nw)+line('Challenges',x.chal)+line('Income',eur(x.inc))+line('Expenses',eur(x.exp))+line('Next month',x.next)+
     (x.comments||[]).map(function(k){return '<div class="fb"><b>'+esc(k.by)+'</b> <span class="meta">'+esc(k.date)+'</span><br>'+esc(k.text)+'</div>'}).join('')+'</div>';
   });
   if((c.missing||[]).length)h+='<div class="dsec meta">No approved report yet from: '+c.missing.map(esc).join(', ')+'</div>';
